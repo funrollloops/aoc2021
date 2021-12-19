@@ -9,18 +9,19 @@ fn main() -> io::Result<()> {
     let mut aim: i64 = 0;
     let mut depth: i64 = 0;
     let mut horiz: i64 = 0;
-    for line_or in stdin.lock().lines() {
-        let line = line_or.unwrap();
-        let cap = re.captures(&line).unwrap();
-        let arg0 = cap[1].chars().nth(0).unwrap();
-        let arg1: i64 = cap[2].parse::<i64>().unwrap();
-        println!("{}\t{} {}", line, arg0, arg1);
-        if arg0 == 'f' { horiz += arg1; depth += aim*arg1; }
-        else if arg0 == 'd' { aim += arg1; }
-        else if arg0 == 'u' { aim -= arg1; }
-        else {
-            println!("arg0 invalid={}", arg0);  
-            panic!();
+    for line in stdin.lock().lines() {
+        let line = line.unwrap();
+        let cap = re.captures(line.trim()).unwrap();
+        let arg1: i64 = cap[2].parse().unwrap();
+        print!("{}\t{}\t{}", line, &cap[1], arg1);
+        match &cap[1] {
+            "forward" => { horiz += arg1; depth += aim*arg1 }
+            "down" => aim += arg1,
+            "up" => aim -= arg1,
+            x => {
+                println!("arg0 invalid={}", x);
+                panic!();
+            }
         }
         println!("\t\tdepth={} * horiz={} => {}", depth, horiz, depth * horiz);
     }
