@@ -38,8 +38,8 @@ fn check_won(board: &Board) -> bool {
         let mut col = 0;
         let mut row = 0;
         for j in 0..5 {
-            if board[i][j] < 0 { col += 1 }
-            if board[j][i] < 0 { row += 1 }
+            if board[i][j] < 0 { row += 1 }
+            if board[j][i] < 0 { col += 1 }
         }
         if col == 5 || row == 5 {
             return true
@@ -49,15 +49,14 @@ fn check_won(board: &Board) -> bool {
 }
 
 fn check_board(draws: &Vec<i32>, mut board: Board) -> (usize, i32) {
-    for turn in 0..draws.len() {
-        let draw = draws[turn];
+    for (turn, draw) in draws.iter().enumerate() {
         let mut score = 0;
-        for i in 0..5 {
-            for j in 0.. 5 {
-                if board[i][j] == draw {
-                    board[i][j] = -99999999;
-                } else if board[i][j] > 0 {
-                    score += board[i][j];
+        for row in board.iter_mut() {
+            for cell in row.iter_mut() {
+                if *cell == *draw {
+                    *cell = -99999999;
+                } else if *cell > 0 {
+                    score += *cell;
                 }
             }
         }
