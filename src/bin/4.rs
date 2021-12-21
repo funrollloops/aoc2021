@@ -74,6 +74,7 @@ fn main() -> io::Result<()> {
     println!("draws={:?}", draws);
 
     let mut best_board: (usize, i32) = (88888888, -1);
+    let mut worst_board: (usize, i32) = (0, -1);
     while let Some(board) = read_board(&stdin)? {
         println!("\n{:?}", board);
         let result = check_board(&draws, board);
@@ -82,7 +83,12 @@ fn main() -> io::Result<()> {
             println!("new best!");
             best_board = result
         }
+        if result > worst_board {
+            println!("new worst!");
+            worst_board = result;
+        }
     }
     println!("best_board={:?}", best_board);
+    println!("worst_board={:?}", worst_board);
     Ok(())
 }
