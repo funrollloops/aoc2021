@@ -2,6 +2,7 @@ use std::io;
 use std::io::BufRead;
 
 
+// #   segs    len
 // 0 = abc efg    6
 // 1 =   c  f  2
 // 2 = a cde g   5
@@ -59,11 +60,8 @@ fn main() -> io::Result<()> {
     for line in stdin.lock().lines() {
         let line = line.unwrap();
         let parts = line.split_once("|").unwrap();
-        // Unique.
-        let mut one: u8 = 0;
-        let mut four: u8 = 0;
-        let mut seven: u8 = 0;
-        const EIGHT: u8 = 0x7f;
+        let mut digits: [u8; 10] = [0; 10];
+        digits[8] = 0x7f;
         // TBD.
         let mut unk5: Vec<u8> = Vec::new();
         let mut unk6: Vec<u8> = Vec::new();
@@ -72,30 +70,30 @@ fn main() -> io::Result<()> {
             let d = parse(tok);
             //println!("d={:08b} tok={}", d, tok);
             match tok.len() {
-                2 => one = d,
-                3 => seven = d,
-                4 => four = d,
+                2 => digits[1] = d,
+                3 => digits[7] = d,
+                4 => digits[4] = d,
                 5 => unk5.push(d),
                 6 => unk6.push(d),
-                7 => assert!(d == EIGHT),
+                7 => assert!(d == digits[8]),
                 _ => panic!("bad token {}", tok),
             }
         }
-        let eg = EIGHT & !(seven | four);
-        assert!(eg.count_ones() == 2, "7={:08b} 4={:08b} 8={:08b} e={:08b}", seven, four, EIGHT, eg);
+        let eg = digits[8] & !(digits[7] | digits[4]);
+        assert!(eg.count_ones() == 2, "7={:08b} 4={:08b} 8={:08b} e={:08b}", digits[7], digits[4], digits[8], eg);
         assert!(unk5.len() == 3);
         assert!(unk6.len() == 3);
-        let mut digits = [0, one, 0, 0, four, 0, 0, seven, EIGHT, 0];
         for u in unk5 {
             if u & eg == eg { digits[2] = u; }
-            else if u & one == one { digits[3] = u; }
+            else if u & digits[1] == digits[1] { digits[3] = u; }
             else { digits[5] = u; }
         }
         for u in unk6 {
             if u & eg != eg { digits[9] = u; }
-            else if u & one == one { digits[0] = u; }
+            else if u & digits[1] == digits[1] { digits[0] = u; }
             else { digits[6] = u; }
         }
+        assert!(!digits.contains(&0));
         let mut num = 0;
         for tok in parts.1.trim().split_whitespace() {
             let d = parse(tok);
