@@ -8,12 +8,9 @@ fn run(initial: &[i32]) {
     for day in 0..=256 {
         println!("day {}: {:?}, {} total", day, state, total);
         let spawning = state[0];
+        state.rotate_left(1);
         total += spawning;
-        for t in 1..9 {
-            state[t-1] = state[t];
-        }
         state[6] += spawning;
-        state[8] = spawning;
     }
 }
 
