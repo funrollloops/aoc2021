@@ -1,51 +1,6 @@
 use std::io;
 use std::io::BufRead;
 
-
-// #   segs    len
-// 0 = abc efg    6
-// 1 =   c  f  2
-// 2 = a cde g   5
-// 3 = a cd fg   5
-// 4 =  bcd f  4
-// 5 = ab d fg   5
-// 6 = ab defg    6
-// 7 = a c  f  3
-// 8 = abcdefg 7
-// 9 = abcd fg    6
-//
-// ## 5s: 
-// 2 = a cde g
-// 3 = a cd fg
-// 5 = ab d fg
-// adg common
-// b or no c=>5 e=>2 otherwise => 3
-//
-// ## 6s:
-// 0 = abc efg
-// 6 = ab defg
-// 9 = abcd fg
-// abfg common, one each of cde missing
-//
-// 1 =   c  f
-// 4 =  bcd f => bd
-// 7 = a c  f => a
-// 1 gives us cf
-// 7-1 gives us a (useless, everything has a)
-// 4-1 gives us bd
-// 8-7-4 = eg
-//
-//  len=6
-//      don't have both e and g? => 9
-//      superset of 1? => zero
-//      _ => 6
-//  len=5
-//      has e and g? => 2
-//      superset of 1? => 3
-//      _ => 5
-//
-//
-// 
 fn parse(tok: &str) -> u8 {
     let mut d: u8 = 0;
     for byte in tok.bytes() {
@@ -60,40 +15,31 @@ fn main() -> io::Result<()> {
     for line in stdin.lock().lines() {
         let line = line.unwrap();
         let parts = line.split_once("|").unwrap();
-        let mut digits: [u8; 10] = [0; 10];
+        let mut digits: [u8; 10] = [0; 10]; // Digit -> segment mappings.
+        // First assign "easy" digits.
         digits[8] = 0x7f;
-        // TBD.
-        let mut unk5: Vec<u8> = Vec::new();
-        let mut unk6: Vec<u8> = Vec::new();
-
         for tok in parts.0.trim().split_whitespace() {
-            let d = parse(tok);
-            //println!("d={:08b} tok={}", d, tok);
             match tok.len() {
-                2 => digits[1] = d,
-                3 => digits[7] = d,
-                4 => digits[4] = d,
-                5 => unk5.push(d),
-                6 => unk6.push(d),
-                7 => assert!(d == digits[8]),
-                _ => panic!("bad token {}", tok),
+                2 => digits[1] = parse(tok),
+                3 => digits[7] = parse(tok),
+                4 => digits[4] = parse(tok),
+                _ => continue
             }
         }
+        // Now infer remaining digits.
         let eg = digits[8] & !(digits[7] | digits[4]);
-        assert!(eg.count_ones() == 2, "7={:08b} 4={:08b} 8={:08b} e={:08b}", digits[7], digits[4], digits[8], eg);
-        assert!(unk5.len() == 3);
-        assert!(unk6.len() == 3);
-        for u in unk5 {
-            if u & eg == eg { digits[2] = u; }
-            else if u & digits[1] == digits[1] { digits[3] = u; }
-            else { digits[5] = u; }
+        for tok in parts.0.trim().split_whitespace() {
+            let u = parse(tok);
+            if tok.len() == 5 {
+                if u & eg == eg { digits[2] = u; }
+                else if u & digits[1] == digits[1] { digits[3] = u; }
+                else { digits[5] = u; }
+            } else if tok.len() == 6 {
+                if u & eg != eg { digits[9] = u; }
+                else if u & digits[1] == digits[1] { digits[0] = u; }
+                else { digits[6] = u; }
+            }
         }
-        for u in unk6 {
-            if u & eg != eg { digits[9] = u; }
-            else if u & digits[1] == digits[1] { digits[0] = u; }
-            else { digits[6] = u; }
-        }
-        assert!(!digits.contains(&0));
         let mut num = 0;
         for tok in parts.1.trim().split_whitespace() {
             let d = parse(tok);
