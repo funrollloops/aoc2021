@@ -6,6 +6,7 @@ fn read_next(buf: &mut String) -> io::Result<bool> {
         Ok(false)
     } else {
         buf.truncate(buf.trim_end().len());
+        // Add an initial and final column of 9s to simplify find_lows.
         buf.insert(0, '9');
         buf.push('9');
         Ok(true)
@@ -13,7 +14,6 @@ fn read_next(buf: &mut String) -> io::Result<bool> {
 }
 
 fn find_lows(bufs: &[String; 3]) -> i32 {
-    println!("{:?}", bufs);
     let mut sum_risk_levels: i32 = 0;
     let b0 = bufs[0].as_bytes();
     let b1 = bufs[1].as_bytes();
@@ -29,20 +29,26 @@ fn find_lows(bufs: &[String; 3]) -> i32 {
 }
 
 fn main() -> io::Result<()> {
-    let mut bufs: [String; 3] = [String::new(), String::new(), String::new()];
+    let mut first_line = String::new();
+    read_next(&mut first_line)?;
+    // We add an initial and final row of 9s to simplify find_lows.
+    let boundary = String::from_utf8(vec![b'9'; first_line.len()]).unwrap();
+
+    let mut bufs: [String; 3] = [
+        boundary.clone(),
+        first_line,
+        String::new(),
+    ];
     let mut sum_risk_levels = 0;
-
-    read_next(&mut bufs[1])?;
-    let width = bufs[1].len();
-    bufs[0] = String::from_utf8(vec![b'9'; width]).unwrap();
-
 
     while read_next(&mut bufs[2])? {
         sum_risk_levels += find_lows(&bufs);
         bufs.rotate_left(1);
     }
-    bufs[2] = String::from_utf8(vec![b'9'; width]).unwrap();
+    // Check last line.
+    bufs[2] = boundary;
     sum_risk_levels += find_lows(&bufs);
+
     println!("total risk level={}", sum_risk_levels);
     Ok(())
 }
